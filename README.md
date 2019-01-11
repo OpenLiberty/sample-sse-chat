@@ -20,7 +20,7 @@ mvn clean package liberty:run-server
 The server will listen on port 9080 by default.  You can change the port (for example, to port 9081) by adding `mvn clean package liberty:run-server -DtestServerHttpPort=9081` to the end of the Maven command.
 
 After the server has started, you should see some output like this:
-![](https://github.com/OpenLiberty/sample-sse-chat/img/CmdServerStarted.png)
+![](https://github.com/OpenLiberty/sample-sse-chat/raw/master/img/CmdServerStarted.png)
 
 At this point, you can enter the following URL into your browser:
 ```
@@ -28,7 +28,7 @@ http://localhost:9080/SseChatSample/index.html
 ```
 
 I recommend connecting with multiple browsers, so that you can have a conversation like this one:
-![](https://github.com/OpenLiberty/sample-sse-chat/img/SseChatBrowser.png)
+![](https://github.com/OpenLiberty/sample-sse-chat/raw/master/img/SseChatBrowser.png)
 
 Press `Ctrl-C` from the command line to stop the server.
 
