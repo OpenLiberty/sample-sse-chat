@@ -30,6 +30,8 @@ http://localhost:9080/SseChatSample/index.html
 I recommend connecting with multiple browsers, so that you can have a conversation like this one:
 ![](https://github.com/OpenLiberty/sample-sse-chat/raw/master/img/SseChatBrowser.png)
 
+Note that SSEs do not work in all browsers.  Consult [Wikipedia](https://en.wikipedia.org/wiki/Server-sent_events#Web_browsers) for more information on browsers that support SSEs.
+
 Press `Ctrl-C` from the command line to stop the server.
 
 Please take a look at the source code that makes this possible.  If you run into any problems with the sample, please let us know by opening a new issue.
