@@ -10,6 +10,7 @@
 // ******************************************************************************
 package io.openliberty.sample.sse.chat;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -17,20 +18,25 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.sse.OutboundSseEvent;
 import javax.ws.rs.sse.Sse;
 import javax.ws.rs.sse.SseBroadcaster;
 import javax.ws.rs.sse.SseEventSink;
 
 @Path("chat")
+@RolesAllowed("ChatUsers")
 public class ChatResource {
+
+	@Context
+	private SecurityContext secContext;
 
 	@Context
 	private Sse sse;
 	
-	private static SseBroadcaster broadcaster;
+	private SseBroadcaster broadcaster;
 	
-	private synchronized static SseBroadcaster getOrCreateBroadcaster(Sse sse) {
+	private synchronized SseBroadcaster getOrCreateBroadcaster(Sse sse) {
 		if (broadcaster == null) {
 			broadcaster = sse.newBroadcaster();
 		}
@@ -46,9 +52,9 @@ public class ChatResource {
 	}
 	
 	@PUT
-	public void broadcast(@QueryParam("user") String user, @QueryParam("message") String message) {
+	public void broadcast(/*@QueryParam("user") String user,*/ @QueryParam("message") String message) {
 		SseBroadcaster b = getOrCreateBroadcaster(sse);
-		ChatMessage chatMessage = new ChatMessage(user, message);
+		ChatMessage chatMessage = new ChatMessage(secContext.getUserPrincipal().getName(), message);
 		OutboundSseEvent event = sse.newEventBuilder().data(ChatMessage.class, chatMessage)
 				.id(""+chatMessage.getMsgID()).mediaType(MediaType.APPLICATION_JSON_TYPE).build();
 		b.broadcast(event);

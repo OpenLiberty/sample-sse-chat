@@ -10,14 +10,14 @@
 // ******************************************************************************
 package io.openliberty.sample.sse.chat;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ChatMessage {
 
 	private static final AtomicLong idGenerator = new AtomicLong();
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+	private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
 	
 	private final long msgID;
 	private final String timestamp;
@@ -28,7 +28,7 @@ public class ChatMessage {
 		this.user = user;
 		this.message = message;
 		this.msgID = idGenerator.incrementAndGet();
-		this.timestamp = dateFormat.format(new Date());
+		this.timestamp = LocalDateTime.now().format(dtf);
 	}
 
 	public long getMsgID() {
