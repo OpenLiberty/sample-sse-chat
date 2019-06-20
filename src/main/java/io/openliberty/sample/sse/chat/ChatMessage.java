@@ -14,37 +14,41 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.json.bind.annotation.JsonbCreator;
+import javax.json.bind.annotation.JsonbProperty;
+
 public class ChatMessage {
 
-	private static final AtomicLong idGenerator = new AtomicLong();
-	private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
-	
-	private final long msgID;
-	private final String timestamp;
-	private final String user;
-	private final String message;
-	
-	ChatMessage(String user, String message) {
-		this.user = user;
-		this.message = message;
-		this.msgID = idGenerator.incrementAndGet();
-		this.timestamp = LocalDateTime.now().format(dtf);
-	}
+    private static final AtomicLong idGenerator = new AtomicLong();
+    private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-	public long getMsgID() {
-		return msgID;
-	}
+    private final long msgID;
+    private final String timestamp;
+    private final String user;
+    private final String message;
 
-	public String getTimestamp() {
-		return timestamp;
-	}
+    @JsonbCreator
+    public ChatMessage(@JsonbProperty("user") String user, @JsonbProperty("message") String message) {
+        this.user = user;
+        this.message = message;
+        this.msgID = idGenerator.incrementAndGet();
+        this.timestamp = LocalDateTime.now().format(dtf);
+    }
 
-	public String getUser() {
-		return user;
-	}
+    public long getMsgID() {
+        return msgID;
+    }
 
-	public String getMessage() {
-		return message;
-	}
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public String getMessage() {
+        return message;
+    }
 }
 

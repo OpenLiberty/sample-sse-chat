@@ -8,12 +8,8 @@
   </welcome-file-list>
 
   <login-config id="LoginConfig_1">  
-    <auth-method>FORM</auth-method>
+    <auth-method>BASIC</auth-method>
     <realm-name>MyRealm</realm-name>
-    <form-login-config id="FormLoginConfig_1">
-      <form-login-page>/login.html</form-login-page>
-      <form-error-page>/loginError.jsp</form-error-page>
-    </form-login-config>
   </login-config>
   
   <security-constraint>

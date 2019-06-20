@@ -18,9 +18,12 @@ import javax.ws.rs.core.Application;
 
 @ApplicationPath("sse")
 public class ChatApp extends Application {
-	
-	@Override
-	public Set<Object> getSingletons() {
-		return Collections.singleton(new ChatResource());
-	}
+
+    @Override
+    public Set<Object> getSingletons() {
+        ChatResource chat = new ChatResource();
+        new Thread(new ChatAgent(chat,
+                "http://localhost:" + System.getProperty("default.http.port") + "/SseChatSample/sse/chat/register")).start();
+        return Collections.singleton(chat);
+    }
 }

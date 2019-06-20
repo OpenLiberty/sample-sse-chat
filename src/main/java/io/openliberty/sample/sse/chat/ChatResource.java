@@ -28,36 +28,40 @@ import javax.ws.rs.sse.SseEventSink;
 @RolesAllowed("ChatUsers")
 public class ChatResource {
 
-	@Context
-	private SecurityContext secContext;
+    @Context
+    private SecurityContext secContext;
 
-	@Context
-	private Sse sse;
-	
-	private SseBroadcaster broadcaster;
-	
-	private synchronized SseBroadcaster getOrCreateBroadcaster(Sse sse) {
-		if (broadcaster == null) {
-			broadcaster = sse.newBroadcaster();
-		}
-		return broadcaster;
-	}
-	
-	@GET
-	@Path("register")
-	@Produces(MediaType.SERVER_SENT_EVENTS)
-	public void register(@Context SseEventSink sink, @Context Sse sse) {
-		SseBroadcaster b = getOrCreateBroadcaster(this.sse);
-		b.register(sink);
-	}
-	
-	@PUT
-	public void broadcast(/*@QueryParam("user") String user,*/ @QueryParam("message") String message) {
-		SseBroadcaster b = getOrCreateBroadcaster(sse);
-		ChatMessage chatMessage = new ChatMessage(secContext.getUserPrincipal().getName(), message);
-		OutboundSseEvent event = sse.newEventBuilder().data(ChatMessage.class, chatMessage)
-				.id(""+chatMessage.getMsgID()).mediaType(MediaType.APPLICATION_JSON_TYPE).build();
-		b.broadcast(event);
-	}
+    @Context
+    private Sse sse;
+
+    private SseBroadcaster broadcaster;
+
+    private synchronized SseBroadcaster getOrCreateBroadcaster(Sse sse) {
+        if (broadcaster == null) {
+            broadcaster = sse.newBroadcaster();
+        }
+        return broadcaster;
+    }
+
+    @GET
+    @Path("register")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    public void register(@Context SseEventSink sink, @Context Sse sse) {
+        SseBroadcaster b = getOrCreateBroadcaster(this.sse);
+        b.register(sink);
+    }
+    
+    @PUT
+    public void sendMessage(@QueryParam("message") String message) {
+        broadcast(secContext.getUserPrincipal().getName(), message);
+    }
+
+    void broadcast(String sender, String message) {
+        SseBroadcaster b = getOrCreateBroadcaster(sse);
+        ChatMessage chatMessage = new ChatMessage(sender, message);
+        OutboundSseEvent event = sse.newEventBuilder().data(ChatMessage.class, chatMessage)
+                .id(""+chatMessage.getMsgID()).mediaType(MediaType.APPLICATION_JSON_TYPE).build();
+        b.broadcast(event);
+    }
 }
 
