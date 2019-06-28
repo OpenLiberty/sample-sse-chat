@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.Base64;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -31,11 +34,13 @@ import javax.ws.rs.sse.SseEventSource;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
 public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseFilter {
+    private final static int PREVIOUS_MESSSAGE_CAPACITY = 1000;
     private final String AGENT_NAME = "SseAgent";
     private final String AGENT_PASSWORD = "pass";
     private final String url;
     private volatile boolean keepRunning = true;
     private final ChatClient client;
+    private List<ChatMessage> previousMessages = new LinkedList<>();
 
     ChatAgent(String url) {
         this.url = url;
@@ -56,7 +61,7 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
                 ChatMessage msg = inboundSseEvent.readData(ChatMessage.class, MediaType.APPLICATION_JSON_TYPE);
                 String msgText = msg.getMessage();
                 if (msgText.startsWith("/")) {
-                    System.out.println("agent received command: " + msg);
+                    System.out.println("agent received command: " + msgText);
                     String cmd;
                     String param;
                     int idx = msgText.indexOf(" ");
@@ -70,6 +75,10 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
                     invoke(cmd, param);
                 } else {
                     System.out.println("agent received new message " + msgText);
+                    previousMessages.add(0, msg);
+                    if (previousMessages.size() > PREVIOUS_MESSSAGE_CAPACITY) {
+                        previousMessages.remove(PREVIOUS_MESSSAGE_CAPACITY - 1);
+                    } 
                 }
                 } catch (Throwable t) {
                     t.printStackTrace();
@@ -78,7 +87,7 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
             source.open();
             while (keepRunning) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -113,6 +122,32 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
         }
     }
 
+    void replay(String data) {
+        try {
+            int numOfMessages = Math.min(Integer.parseInt(data), previousMessages.size());
+            String replay = "Replaying last " + numOfMessages + " messages:";
+            List<ChatMessage> list = previousMessages.subList(0, numOfMessages);
+            for (int i=numOfMessages-1; i >= 0 ; i--) {
+                ChatMessage msg = list.get(i);
+                replay += "<br>" + msg.getUser() + " said \"" + msg.getMessage() + "\" at " + msg.getTimestamp(); 
+            }
+            /*
+            Iterator<ChatMessage> iter = previousMessages.descendingIterator();
+            while (iter.hasNext()) {
+                ChatMessage msg = iter.next();
+                replay += System.lineSeparator() + msg.getUser() + " said \"" + msg.getMessage() + "\" at " + msg.getTimestamp(); 
+                if (--numOfMessages >= 0) {
+                    break;
+                }
+            }
+            */
+            say(replay);
+        } catch (Throwable t) {
+            say("I didn't understand that replay command - replay commands should be in the format, \"/replay n\"" +
+                " where n is the number of messages to replay");
+            t.printStackTrace();
+        }
+    }
     void shutdown(String data) {
         say("Shutting down now... bye!");
         keepRunning=false;

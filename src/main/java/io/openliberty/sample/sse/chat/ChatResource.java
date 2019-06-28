@@ -64,6 +64,7 @@ public class ChatResource {
     @Path("registerAgent")
     @Produces(MediaType.SERVER_SENT_EVENTS)
     public void registerAgent(@Context SseEventSink sink, @Context Sse sse) {
+        register(sink, sse); // register for normal messages and commands
         SseBroadcaster b = getOrCreateAgentBroadcaster();
         b.register(sink);
     }
