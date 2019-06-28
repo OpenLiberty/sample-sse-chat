@@ -1,7 +1,18 @@
+// ******************************************************************************
+//  Copyright (c) 2019 IBM Corporation and others.
+//  All rights reserved. This program and the accompanying materials
+//  are made available under the terms of the Eclipse Public License v1.0
+//  which accompanies this distribution, and is available at
+//  http://www.eclipse.org/legal/epl-v10.html
+//
+//  Contributors:
+//  IBM Corporation - initial API and implementation
+// ******************************************************************************
 package io.openliberty.sample.sse.chat;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.Base64;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -17,22 +28,28 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.sse.SseEventSource;
 
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
+
 public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseFilter {
     private final String AGENT_NAME = "SseAgent";
-    private final ChatResource chat;
+    private final String AGENT_PASSWORD = "pass";
     private final String url;
     private volatile boolean keepRunning = true;
+    private final ChatClient client;
 
-    ChatAgent(ChatResource chat, String url) {
-        this.chat = chat;
+    ChatAgent(String url) {
         this.url = url;
+        client = RestClientBuilder.newBuilder()
+                                  .baseUri(URI.create(url))
+                                  .register(this)
+                                  .build(ChatClient.class);
     }
 
     @Override
     public void run() {
         System.out.println("agent run " +  url);
         Client client = ClientBuilder.newClient().register(this);
-        WebTarget target = client.target(url);
+        WebTarget target = client.target(url + "/registerAgent");
         try (SseEventSource source = SseEventSource.target(target).build()) {
             source.register((inboundSseEvent) -> {
                 try {
@@ -81,7 +98,7 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
     }
 
     void say(String data) {
-        chat.broadcast(AGENT_NAME, data);
+        client.sendMessage(data);
     }
 
     void reminder(String data) {
@@ -105,7 +122,7 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
     public void filter(ClientRequestContext requestContext) throws IOException {
         // add authorization header
         requestContext.getHeaders().putSingle(HttpHeaders.AUTHORIZATION,
-                "Basic " + Base64.getEncoder().encodeToString("SseAgent:pass".getBytes("UTF-8")));
+                "Basic " + Base64.getEncoder().encodeToString((AGENT_NAME + ":" + AGENT_PASSWORD).getBytes("UTF-8")));
         System.out.println("using SseAgent:pass header : " + requestContext.getHeaderString(HttpHeaders.AUTHORIZATION));
 
     }

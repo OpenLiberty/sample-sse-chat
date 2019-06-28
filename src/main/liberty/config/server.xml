@@ -12,6 +12,7 @@
     <feature>jaxrs-2.1</feature>
     <feature>jsonb-1.0</feature>
     <feature>jsp-2.3</feature>
+    <feature>mpRestClient-1.2</feature>
     <feature>appSecurity-2.0</feature>
   </featureManager>
 

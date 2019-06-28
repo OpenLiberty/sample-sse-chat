@@ -36,32 +36,48 @@ public class ChatResource {
 
     private SseBroadcaster broadcaster;
 
-    private synchronized SseBroadcaster getOrCreateBroadcaster(Sse sse) {
+    private SseBroadcaster agentBroadcaster;
+
+    private synchronized SseBroadcaster getOrCreateBroadcaster() {
         if (broadcaster == null) {
-            broadcaster = sse.newBroadcaster();
+            broadcaster = this.sse.newBroadcaster();
         }
         return broadcaster;
+    }
+
+    private synchronized SseBroadcaster getOrCreateAgentBroadcaster() {
+        if (agentBroadcaster == null) {
+            agentBroadcaster = this.sse.newBroadcaster();
+        }
+        return agentBroadcaster;
     }
 
     @GET
     @Path("register")
     @Produces(MediaType.SERVER_SENT_EVENTS)
     public void register(@Context SseEventSink sink, @Context Sse sse) {
-        SseBroadcaster b = getOrCreateBroadcaster(this.sse);
+        SseBroadcaster b = getOrCreateBroadcaster();
         b.register(sink);
     }
-    
-    @PUT
-    public void sendMessage(@QueryParam("message") String message) {
-        broadcast(secContext.getUserPrincipal().getName(), message);
+
+    @GET
+    @Path("registerAgent")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    public void registerAgent(@Context SseEventSink sink, @Context Sse sse) {
+        SseBroadcaster b = getOrCreateAgentBroadcaster();
+        b.register(sink);
     }
 
-    void broadcast(String sender, String message) {
-        SseBroadcaster b = getOrCreateBroadcaster(sse);
+    @PUT
+    public void sendMessage(@QueryParam("message") String message) {
+        SseBroadcaster b = message.startsWith("/") ? getOrCreateAgentBroadcaster() : getOrCreateBroadcaster();
+        broadcast(secContext.getUserPrincipal().getName(), message, b);
+    }
+
+    void broadcast(String sender, String message, SseBroadcaster broadcaster) {
         ChatMessage chatMessage = new ChatMessage(sender, message);
         OutboundSseEvent event = sse.newEventBuilder().data(ChatMessage.class, chatMessage)
                 .id(""+chatMessage.getMsgID()).mediaType(MediaType.APPLICATION_JSON_TYPE).build();
-        b.broadcast(event);
+        broadcaster.broadcast(event);
     }
 }
-
