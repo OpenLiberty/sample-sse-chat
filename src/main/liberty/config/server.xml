@@ -30,5 +30,5 @@
     </group>
   </basicRegistry>
 
-  <httpEndpoint host="localhost" httpPort="${default.http.port}" httpsPort="${default.https.port}" id="defaultHttpEndpoint"/>
+  <httpEndpoint host="localhost" httpPort="${default.http.port}" id="defaultHttpEndpoint"/>
 </server>

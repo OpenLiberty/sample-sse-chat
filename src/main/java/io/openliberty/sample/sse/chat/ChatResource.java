@@ -77,8 +77,11 @@ public class ChatResource {
 
     void broadcast(String sender, String message, SseBroadcaster broadcaster) {
         ChatMessage chatMessage = new ChatMessage(sender, message);
-        OutboundSseEvent event = sse.newEventBuilder().data(ChatMessage.class, chatMessage)
-                .id(""+chatMessage.getMsgID()).mediaType(MediaType.APPLICATION_JSON_TYPE).build();
+        OutboundSseEvent event = sse.newEventBuilder()
+                                    .data(ChatMessage.class, chatMessage)
+                                    .id(""+chatMessage.getMsgID())
+                                    .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                                    .build();
         broadcaster.broadcast(event);
     }
 }

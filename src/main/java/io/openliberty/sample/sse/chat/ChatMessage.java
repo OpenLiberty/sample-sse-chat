@@ -27,12 +27,17 @@ public class ChatMessage {
     private final String user;
     private final String message;
 
+    public ChatMessage(String user, String message) {
+        this(user, message, LocalDateTime.now().format(dtf), idGenerator.incrementAndGet());
+    }
+
     @JsonbCreator
-    public ChatMessage(@JsonbProperty("user") String user, @JsonbProperty("message") String message) {
+    public ChatMessage(@JsonbProperty("user") String user, @JsonbProperty("message") String message,
+                       @JsonbProperty("timestamp") String timestamp, @JsonbProperty("msgID") long msgID) {
         this.user = user;
         this.message = message;
-        this.msgID = idGenerator.incrementAndGet();
-        this.timestamp = LocalDateTime.now().format(dtf);
+        this.msgID = msgID;
+        this.timestamp = timestamp;
     }
 
     public long getMsgID() {
