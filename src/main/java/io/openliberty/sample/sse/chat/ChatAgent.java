@@ -14,11 +14,11 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.Base64;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -34,12 +34,13 @@ import javax.ws.rs.sse.SseEventSource;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
 public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseFilter {
+    private final static Logger LOG = Logger.getLogger(ChatAgent.class.getName());
     private final static int PREVIOUS_MESSSAGE_CAPACITY = 1000;
-    private final String AGENT_NAME = "SseAgent";
-    private final String AGENT_PASSWORD = "pass";
+    private final static String AGENT_NAME = "SseAgent";
+    private final static String AGENT_PASSWORD = "pass";
     private final String url;
-    private volatile boolean keepRunning = true;
     private final ChatClient client;
+    private volatile boolean keepRunning = true;
     private List<ChatMessage> previousMessages = new LinkedList<>();
 
     ChatAgent(String url) {
@@ -52,34 +53,13 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
 
     @Override
     public void run() {
-        System.out.println("agent run " +  url);
+        LOG.info("agent run " +  url);
         Client client = ClientBuilder.newClient().register(this);
         WebTarget target = client.target(url + "/registerAgent");
         try (SseEventSource source = SseEventSource.target(target).build()) {
             source.register((inboundSseEvent) -> {
                 try {
-                ChatMessage msg = inboundSseEvent.readData(ChatMessage.class, MediaType.APPLICATION_JSON_TYPE);
-                String msgText = msg.getMessage();
-                if (msgText.startsWith("/")) {
-                    System.out.println("agent received command: " + msgText);
-                    String cmd;
-                    String param;
-                    int idx = msgText.indexOf(" ");
-                    if (idx > 0) {
-                        cmd = msgText.substring(1, idx);
-                        param = msgText.substring(idx).trim();
-                    } else {
-                        cmd = msgText.substring(1);
-                        param = "";
-                    }
-                    invoke(cmd, param);
-                } else {
-                    System.out.println("agent received new message " + msgText);
-                    previousMessages.add(0, msg);
-                    if (previousMessages.size() > PREVIOUS_MESSSAGE_CAPACITY) {
-                        previousMessages.remove(PREVIOUS_MESSSAGE_CAPACITY - 1);
-                    } 
-                }
+                    processMessage(inboundSseEvent.readData(ChatMessage.class, MediaType.APPLICATION_JSON_TYPE));
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -94,6 +74,30 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
             }
         } catch (Throwable t) {
             t.printStackTrace();
+        }
+    }
+
+    private void processMessage(ChatMessage msg) {
+        String msgText = msg.getMessage();
+        if (msgText.startsWith("/")) {
+            LOG.info("agent received command: " + msgText);
+            String cmd;
+            String param;
+            int idx = msgText.indexOf(" ");
+            if (idx > 0) {
+                cmd = msgText.substring(1, idx);
+                param = msgText.substring(idx).trim();
+            } else {
+                cmd = msgText.substring(1);
+                param = "";
+            }
+            invoke(cmd, param);
+        } else {
+            LOG.info("agent received new message " + msgText);
+            previousMessages.add(0, msg);
+            if (previousMessages.size() > PREVIOUS_MESSSAGE_CAPACITY) {
+                previousMessages.remove(PREVIOUS_MESSSAGE_CAPACITY - 1);
+            }
         }
     }
 
@@ -131,16 +135,6 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
                 ChatMessage msg = list.get(i);
                 replay += "<br>" + msg.getUser() + " said \"" + msg.getMessage() + "\" at " + msg.getTimestamp(); 
             }
-            /*
-            Iterator<ChatMessage> iter = previousMessages.descendingIterator();
-            while (iter.hasNext()) {
-                ChatMessage msg = iter.next();
-                replay += System.lineSeparator() + msg.getUser() + " said \"" + msg.getMessage() + "\" at " + msg.getTimestamp(); 
-                if (--numOfMessages >= 0) {
-                    break;
-                }
-            }
-            */
             say(replay);
         } catch (Throwable t) {
             say("I didn't understand that replay command - replay commands should be in the format, \"/replay n\"" +
@@ -158,12 +152,11 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
         // add authorization header
         requestContext.getHeaders().putSingle(HttpHeaders.AUTHORIZATION,
                 "Basic " + Base64.getEncoder().encodeToString((AGENT_NAME + ":" + AGENT_PASSWORD).getBytes("UTF-8")));
-        System.out.println("using SseAgent:pass header : " + requestContext.getHeaderString(HttpHeaders.AUTHORIZATION));
-
+        LOG.info("using SseAgent:pass header : " + requestContext.getHeaderString(HttpHeaders.AUTHORIZATION));
     }
 
     @Override
     public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
-        System.out.println("agent sse register responsecode: " + responseContext.getStatus());
+        LOG.info("agent sse register responsecode: " + responseContext.getStatus());
     }
 }
