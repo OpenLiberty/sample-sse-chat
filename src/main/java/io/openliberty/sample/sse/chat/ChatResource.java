@@ -67,21 +67,21 @@ public class ChatResource {
         register(sink, sse); // register for normal messages and commands
         SseBroadcaster b = getOrCreateAgentBroadcaster();
         b.register(sink);
+        sink.send(newMessage("system", "registered"));
     }
 
     @PUT
     public void sendMessage(@QueryParam("message") String message) {
         SseBroadcaster b = message.startsWith("/") ? getOrCreateAgentBroadcaster() : getOrCreateBroadcaster();
-        broadcast(secContext.getUserPrincipal().getName(), message, b);
+        b.broadcast(newMessage(secContext.getUserPrincipal().getName(), message));
     }
 
-    void broadcast(String sender, String message, SseBroadcaster broadcaster) {
+    OutboundSseEvent newMessage(String sender, String message) {
         ChatMessage chatMessage = new ChatMessage(sender, message);
-        OutboundSseEvent event = sse.newEventBuilder()
-                                    .data(ChatMessage.class, chatMessage)
-                                    .id(""+chatMessage.getMsgID())
-                                    .mediaType(MediaType.APPLICATION_JSON_TYPE)
-                                    .build();
-        broadcaster.broadcast(event);
+        return sse.newEventBuilder()
+                  .data(ChatMessage.class, chatMessage)
+                  .id(""+chatMessage.getMsgID())
+                  .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                  .build();
     }
 }
