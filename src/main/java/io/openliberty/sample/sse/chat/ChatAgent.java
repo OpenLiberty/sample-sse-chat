@@ -18,6 +18,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.client.Client;
@@ -57,16 +59,22 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
         while(keepRunning) {
             Client client = ClientBuilder.newClient().register(this);
             WebTarget target = client.target(url + "/registerAgent");
+            AtomicBoolean keepProcessing = new AtomicBoolean(true);
             try (SseEventSource source = SseEventSource.target(target).build()) {
-                source.register((inboundSseEvent) -> {
-                    try {
-                        processMessage(inboundSseEvent.readData(ChatMessage.class, MediaType.APPLICATION_JSON_TYPE));
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
-                });
+                source.register(
+                    inboundSseEvent -> {
+                        try {
+                            processMessage(inboundSseEvent.readData(ChatMessage.class, MediaType.APPLICATION_JSON_TYPE));
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                        }
+                    },
+                    throwable -> {
+                        LOG.log(Level.WARNING, "Error during SSE processing - will reconnect", throwable);
+                        keepProcessing.set(false);
+                    });
                 source.open();
-                while (keepRunning) {
+                while (keepProcessing.get()) {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
