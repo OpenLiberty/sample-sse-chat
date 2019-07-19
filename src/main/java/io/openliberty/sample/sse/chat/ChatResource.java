@@ -67,7 +67,6 @@ public class ChatResource {
         register(sink, sse); // register for normal messages and commands
         SseBroadcaster b = getOrCreateAgentBroadcaster();
         b.register(sink);
-        sink.send(newMessage("system", "registered"));
     }
 
     @PUT

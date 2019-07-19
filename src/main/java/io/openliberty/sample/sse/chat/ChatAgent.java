@@ -54,27 +54,30 @@ public class ChatAgent implements Runnable, ClientRequestFilter, ClientResponseF
     @Override
     public void run() {
         LOG.info("agent run " +  url);
-        Client client = ClientBuilder.newClient().register(this);
-        WebTarget target = client.target(url + "/registerAgent");
-        try (SseEventSource source = SseEventSource.target(target).build()) {
-            source.register((inboundSseEvent) -> {
-                try {
-                    processMessage(inboundSseEvent.readData(ChatMessage.class, MediaType.APPLICATION_JSON_TYPE));
-                } catch (Throwable t) {
-                    t.printStackTrace();
+        while(keepRunning) {
+            Client client = ClientBuilder.newClient().register(this);
+            WebTarget target = client.target(url + "/registerAgent");
+            try (SseEventSource source = SseEventSource.target(target).build()) {
+                source.register((inboundSseEvent) -> {
+                    try {
+                        processMessage(inboundSseEvent.readData(ChatMessage.class, MediaType.APPLICATION_JSON_TYPE));
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                });
+                source.open();
+                while (keepRunning) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            });
-            source.open();
-            while (keepRunning) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
-        } catch (Throwable t) {
-            t.printStackTrace();
         }
+        LOG.info("agent has stopped");
     }
 
     private void processMessage(ChatMessage msg) {
