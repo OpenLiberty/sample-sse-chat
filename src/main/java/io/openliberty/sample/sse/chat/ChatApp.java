@@ -10,18 +10,14 @@
 // ******************************************************************************
 package io.openliberty.sample.sse.chat;
 
-import java.util.Collections;
-import java.util.Set;
-
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 @ApplicationPath("sse")
 public class ChatApp extends Application {
 
-    @Override
-    public Set<Object> getSingletons() {
-        new Thread(new ChatAgent("http://localhost:" + System.getProperty("default.http.port") + "/SseChatSample/sse/chat")).start();
-        return Collections.singleton(new ChatResource());
+    public ChatApp() {
+        new Thread(new ChatAgent(
+                "http://localhost:" + System.getProperty("default.http.port") + "/SseChatSample/sse/chat")).start();
     }
 }
