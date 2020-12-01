@@ -94,15 +94,10 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>net.wasdev.wlp.maven.plugins</groupId>
+                <groupId>io.openliberty.tools</groupId>
                 <artifactId>liberty-maven-plugin</artifactId>
-                <version>2.0</version>
+                <version>3.2.3</version>
                 <configuration>
-<!--
-                    <install>
-                        <runtimeUrl>http://public.dhe.ibm.com/ibmdl/export/pub/software/openliberty/wasliberty-open-liberty/io/openliberty/openliberty-runtime/17.0.0.3-RC/openliberty-runtime-17.0.0.3-RC.zip</runtimeUrl>
-                    </install>
--->
                 <assemblyArtifact>
                     <groupId>io.openliberty</groupId>
                     <artifactId>openliberty-runtime</artifactId>
@@ -110,9 +105,6 @@
                     <type>zip</type>
                     </assemblyArtifact>
                     <serverName>${project.artifactId}Server</serverName>
-<!--
-                    <stripVersion>true</stripVersion>
--->
                     <configFile>src/main/liberty/config/server.xml</configFile>
                     <packageFile>${package.file}</packageFile>
                     <include>${packaging.type}</include>
@@ -122,18 +114,6 @@
                         <app.context.root>${warContext}</app.context.root>
                     </bootstrapProperties>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>package-server</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>package-server</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>target/wlp-package</outputDirectory>
-                        </configuration>
-                     </execution>
-                </executions>
             </plugin>
             <!-- tag::build_test[] -->
 <!--
